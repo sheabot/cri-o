@@ -221,6 +221,12 @@ func mergeConfig(config *libconfig.Config, ctx *cli.Context) error {
 	if ctx.IsSet("log-filter") {
 		config.LogFilter = ctx.String("log-filter")
 	}
+	if ctx.IsSet("log-rotate-max-size") {
+		config.LogRotateMaxSize = ctx.Int("log-rotate-max-size")
+	}
+	if ctx.IsSet("log-rotate-max-backups") {
+		config.LogRotateMaxBackups = ctx.Int("log-rotate-max-backups")
+	}
 	if ctx.IsSet("log-dir") {
 		config.LogDir = ctx.String("log-dir")
 	}
@@ -403,6 +409,17 @@ func getCrioFlags(defConf *libconfig.Config) []cli.Flag {
 			Name:    "log-filter",
 			Usage:   `Filter the log messages by the provided regular expression. For example 'request.\*' filters all gRPC requests.`,
 			EnvVars: []string{"CONTAINER_LOG_FILTER"},
+		},
+		&cli.IntFlag{
+			Name:    "log-rotate-max-size",
+			Value:   defConf.LogRotateMaxSize,
+			Usage:   fmt.Sprintf("Maximum size in megabytes of the log file before it gets rotated. If it is < 0, then it is disabled. (default: %d)", defConf.LogRotateMaxSize),
+			EnvVars: []string{"CONTAINER_LOG_ROTATE_MAX_SIZE"},
+		},
+		&cli.IntFlag{
+			Name:    "log-rotate-max-backups",
+			Usage:   fmt.Sprintf("Maximum number of old log files to retain. If it is <= 0, then all old log files are retained. (default: %d)", defConf.LogRotateMaxBackups),
+			EnvVars: []string{"CONTAINER_LOG_ROTATE_MAX_BACKUPS"},
 		},
 		&cli.StringFlag{
 			Name:      "log-dir",

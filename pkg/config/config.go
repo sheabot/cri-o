@@ -116,6 +116,13 @@ const (
 	DefaultIrqBalanceConfigFile = "/etc/sysconfig/irqbalance"
 )
 
+const (
+	// defaultLogRotateMaxSize is the default value for the maximum size in
+	// megabytes of the log file before it gets rotated.
+	// Negative values indicate that the log file won't be rotated.
+	defaultLogRotateMaxSize = -1
+)
+
 // This structure is necessary to fake the TOML tables when parsing,
 // while also not requiring a bunch of layered structs for no good
 // reason.
@@ -286,6 +293,15 @@ type RuntimeConfig struct {
 
 	// LogFilter specifies a regular expression to filter the log messages
 	LogFilter string `toml:"log_filter"`
+
+	// LogRotateMaxSize is the maximum size in megabytes of the log file before
+	// it gets rotated.
+	// Negative values indicate that the log file won't be rotated.
+	LogRotateMaxSize int `toml:"log_rotate_max_size"`
+
+	// LogRotateMaxBackups is the maximum number of old log files to retain.
+	// Zero or negative values indicate that all log files will be retained.
+	LogRotateMaxBackups int `toml:"log_rotate_max_backups"`
 
 	// NamespacesDir is the directory where the state of the managed namespaces
 	// gets tracked
@@ -617,6 +633,7 @@ func DefaultConfig() (*Config, error) {
 			ApparmorProfile:          apparmor.DefaultProfile,
 			IrqBalanceConfigFile:     DefaultIrqBalanceConfigFile,
 			CgroupManagerName:        cgroupManager.Name(),
+			LogRotateMaxSize:         defaultLogRotateMaxSize,
 			PidsLimit:                DefaultPidsLimit,
 			ContainerExitsDir:        containerExitsDir,
 			ContainerAttachSocketDir: conmonconfig.ContainerAttachSocketDir,

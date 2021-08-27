@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	_ "net/http/pprof"
@@ -32,6 +33,7 @@ import (
 	"github.com/urfave/cli/v2"
 	"golang.org/x/sys/unix"
 	"google.golang.org/grpc"
+	"gopkg.in/natefinch/lumberjack.v2"
 	"k8s.io/klog/v2"
 )
 
@@ -161,9 +163,19 @@ func main() {
 		logrus.AddHook(filterHook)
 
 		if path := c.String("log"); path != "" {
-			f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND|os.O_SYNC, 0o666)
-			if err != nil {
-				return err
+			var f io.Writer
+			if config.LogRotateMaxSize < 0 {
+				f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND|os.O_SYNC, 0o666)
+				if err != nil {
+					return err
+				}
+				logrus.SetOutput(f)
+			} else {
+				f = &lumberjack.Logger{
+					Filename:   path,
+					MaxSize:    config.LogRotateMaxSize,
+					MaxBackups: config.LogRotateMaxBackups,
+				}
 			}
 			logrus.SetOutput(f)
 		}
