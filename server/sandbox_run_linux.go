@@ -302,21 +302,21 @@ func (s *Server) runPodSandbox(ctx context.Context, req *types.RunPodSandboxRequ
 		}
 	}()
 
-	log.Infof(ctx, "s.ReservePodName: %s: %s", sbox.ID(), sbox.Name())
+	log.Infof(ctx, "DEBUG: s.ReservePodName: %s: %s", sbox.ID(), sbox.Name())
 	if _, err := s.ReservePodName(sbox.ID(), sbox.Name()); err != nil {
-		log.Errorf(ctx, "s.ReservePodName: %v", err)
+		log.Errorf(ctx, "DEBUG: s.ReservePodName: %v", err)
 		cachedID, resourceErr := s.getResourceOrWait(ctx, sbox.Name(), "sandbox")
 		if resourceErr == nil {
 			return &types.RunPodSandboxResponse{PodSandboxID: cachedID}, nil
 		}
-		log.Errorf(ctx, "s.ReservePodName: resourceErr: %v", resourceErr.Error())
+		log.Errorf(ctx, "DEBUG: s.ReservePodName: resourceErr: %v", resourceErr.Error())
 		return nil, errors.Wrapf(err, resourceErr.Error())
 	}
 
 	securityContext := sbox.Config().Linux.SecurityContext
 	hostNetwork := securityContext.NamespaceOptions.Network == types.NamespaceModeNODE
 
-	log.Infof(ctx, "hostNetwork: %v", hostNetwork)
+	log.Infof(ctx, "DEBUG: hostNetwork: %v", hostNetwork)
 	if err := s.config.CNIPluginReadyOrError(); err != nil && !hostNetwork {
 		// if the cni plugin isn't ready yet, we should wait until it is
 		// before proceeding
@@ -352,10 +352,10 @@ func (s *Server) runPodSandbox(ctx context.Context, req *types.RunPodSandboxRequ
 		return nil, err
 	}
 
-	log.Infof(ctx, "s.ReserveSandboxContainerIDAndName: %s: %s", sbox.ID(), sbox.Name())
+	log.Infof(ctx, "DEBUG: s.ReserveSandboxContainerIDAndName: %s: %s", sbox.ID(), sbox.Name())
 	containerName, err := s.ReserveSandboxContainerIDAndName(sbox.Config())
 	if err != nil {
-		log.Errorf(ctx, "s.ReserveSandboxContainerIDAndName: %s: %s: %v", sbox.ID(), sbox.Name(), err)
+		log.Errorf(ctx, "DEBUG: s.ReserveSandboxContainerIDAndName: %s: %s: %v", sbox.ID(), sbox.Name(), err)
 		return nil, err
 	}
 	description = fmt.Sprintf("runSandbox: releasing container name: %s", containerName)
@@ -373,7 +373,7 @@ func (s *Server) runPodSandbox(ctx context.Context, req *types.RunPodSandboxRequ
 
 	privileged := s.privilegedSandbox(req)
 
-	log.Infof(ctx, "s.StorageRuntimeServer().CreatePodSandbox: %s: %s", sbox.ID(), sbox.Name())
+	log.Infof(ctx, "DEBUG: s.StorageRuntimeServer().CreatePodSandbox: %s: %s", sbox.ID(), sbox.Name())
 	podContainer, err := s.StorageRuntimeServer().CreatePodSandbox(s.config.SystemContext,
 		sbox.Name(), sbox.ID(),
 		s.config.PauseImage,
@@ -388,7 +388,7 @@ func (s *Server) runPodSandbox(ctx context.Context, req *types.RunPodSandboxRequ
 		labelOptions,
 		privileged,
 	)
-	log.Infof(ctx, "s.StorageRuntimeServer().CreatePodSandbox: %s: %s: %v", sbox.ID(), sbox.Name(), err)
+	log.Infof(ctx, "DEBUG: s.StorageRuntimeServer().CreatePodSandbox: %s: %s: %v", sbox.ID(), sbox.Name(), err)
 
 	mountLabel := podContainer.MountLabel
 	processLabel := podContainer.ProcessLabel
@@ -428,7 +428,9 @@ func (s *Server) runPodSandbox(ctx context.Context, req *types.RunPodSandboxRequ
 	}
 
 	// TODO: factor generating/updating the spec into something other projects can vendor
+	log.Infof(ctx, "DEBUG: sbox.InitInfraContainer: %s: %s", sbox.ID(), sbox.Name())
 	if err := sbox.InitInfraContainer(&s.config, &podContainer); err != nil {
+		log.Infof(ctx, "DEBUG: sbox.InitInfraContainer: %s: %s: %v", sbox.ID(), sbox.Name(), err)
 		return nil, err
 	}
 
@@ -628,6 +630,7 @@ func (s *Server) runPodSandbox(ctx context.Context, req *types.RunPodSandboxRequ
 	}
 	g.AddAnnotation(annotations.PortMappings, string(portMappingsJSON))
 
+	log.Infof(ctx, "DEBUG: s.config.CgroupManager().SandboxCgroupPath: %s: %s", sbox.ID(), sbox.Name())
 	cgroupParent, cgroupPath, err := s.config.CgroupManager().SandboxCgroupPath(sbox.Config().Linux.CgroupParent, sbox.ID())
 	if err != nil {
 		return nil, err
@@ -635,6 +638,7 @@ func (s *Server) runPodSandbox(ctx context.Context, req *types.RunPodSandboxRequ
 	if cgroupPath != "" {
 		g.SetLinuxCgroupsPath(cgroupPath)
 	}
+	log.Infof(ctx, "DEBUG: cgroupParent=%s, cgroupPath=%s, err=%v", cgroupParent, cgroupPath, err)
 	g.AddAnnotation(annotations.CgroupParent, cgroupParent)
 
 	if sandboxIDMappings != nil {
@@ -698,6 +702,7 @@ func (s *Server) runPodSandbox(ctx context.Context, req *types.RunPodSandboxRequ
 	sysctls := s.configureGeneratorForSysctls(ctx, g, hostNetwork, hostIPC, req.Config.Linux.Sysctls)
 
 	// set up namespaces
+	log.Infof(ctx, "DEBUG: s.configureGeneratorForSandboxNamespaces: %s: %s", sbox.ID(), sbox.Name())
 	nsCleanupFuncs, err := s.configureGeneratorForSandboxNamespaces(hostNetwork, hostIPC, hostPID, sandboxIDMappings, sysctls, sb, g)
 	// We want to cleanup after ourselves if we are managing any namespaces and fail in this function.
 	nsCleanupDescription := fmt.Sprintf("runSandbox: cleaning up namespaces after failing to run sandbox %s", sbox.ID())
@@ -711,6 +716,7 @@ func (s *Server) runPodSandbox(ctx context.Context, req *types.RunPodSandboxRequ
 		}
 		return nil
 	}
+	log.Infof(ctx, "DEBUG: s.configureGeneratorForSandboxNamespaces: err=%v", err)
 	if err != nil {
 		resourceCleaner.Add(ctx, nsCleanupDescription, nsCleanupFunc)
 		return nil, err

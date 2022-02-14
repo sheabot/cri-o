@@ -501,6 +501,7 @@ func (c *ContainerServer) ReleaseContainerName(name string) {
 
 // ReservePodName holds a name for a pod that is being created
 func (c *ContainerServer) ReservePodName(id, name string) (string, error) {
+	logrus.Infof("DEBUG: ReservePodName: id=%s, name=%s", id, name)
 	if err := c.podNameIndex.Reserve(name, id); err != nil {
 		err = fmt.Errorf("error reserving pod name %s for id %s: %v", name, id, err)
 		logrus.Warn(err)
@@ -512,6 +513,7 @@ func (c *ContainerServer) ReservePodName(id, name string) (string, error) {
 // ReleasePodName releases a pod name from the index so it can be used by other
 // pods
 func (c *ContainerServer) ReleasePodName(name string) {
+	logrus.Infof("DEBUG: ReleasePodName: name=%s", name)
 	c.podNameIndex.Release(name)
 }
 
