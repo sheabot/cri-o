@@ -102,11 +102,11 @@ func SetCgroupManager(cgroupManager string) (CgroupManager, error) {
 func verifyCgroupHasEnoughMemory(slicePath, memorySubsystemPath, memoryMaxFilename string) error {
 	// read in the memory limit from memory max file
 	fullPath := filepath.Join(memorySubsystemPath, slicePath, memoryMaxFilename)
+	logrus.Infof("DEBUG: verifyCgroupHasEnoughMemory: fullPath: %q", fullPath)
 	fileData, err := ioutil.ReadFile(filepath.Join(memorySubsystemPath, slicePath, memoryMaxFilename))
 	if err != nil {
 		if os.IsNotExist(err) {
 			logrus.Warnf("Failed to find %s at path: %q", memoryMaxFilename, slicePath)
-			logrus.Warnf("Failed to find %s at fullPath: %q: %v", memoryMaxFilename, fullPath, err)
 			return nil
 		}
 		return errors.Wrapf(err, "unable to read memory file for cgroups at %s", slicePath)
@@ -138,6 +138,7 @@ func VerifyMemoryIsEnough(memoryLimit int64) error {
 // createSandboxCgroup takes the sandbox parent, and sandbox ID.
 // It creates a new cgroup for that sandbox, which is useful when spoofing an infra container.
 func createSandboxCgroup(sbParent, containerID string, mgr CgroupManager) error {
+	logrus.Infof("DEBUG: createSandboxCgroup: sbParent=%s, containerID=%s", sbParent, containerID)
 	path, err := mgr.ContainerCgroupAbsolutePath(sbParent, containerID)
 	if err != nil {
 		return err

@@ -1,3 +1,4 @@
+//go:build linux
 // +build linux
 
 package cgmgr
@@ -158,5 +159,6 @@ func setWorkloadSettings(cgPath string, resources *rspec.LinuxResources) error {
 
 // CreateSandboxCgroup calls the helper function createSandboxCgroup for this manager.
 func (m *CgroupfsManager) CreateSandboxCgroup(sbParent, containerID string) error {
+	logrus.Infof("DEBUG: CreateSandboxCgroup: sbParent=%s, containerID=%s", sbParent, containerID)
 	return createSandboxCgroup(sbParent, containerID, m)
 }

@@ -633,6 +633,7 @@ func (s *Server) runPodSandbox(ctx context.Context, req *types.RunPodSandboxRequ
 	log.Infof(ctx, "DEBUG: s.config.CgroupManager().SandboxCgroupPath: %s: %s", sbox.ID(), sbox.Name())
 	cgroupParent, cgroupPath, err := s.config.CgroupManager().SandboxCgroupPath(sbox.Config().Linux.CgroupParent, sbox.ID())
 	if err != nil {
+		log.Errorf(ctx, "DEBUG: cgroupParent=%s, cgroupPath=%s, err=%v", cgroupParent, cgroupPath, err)
 		return nil, err
 	}
 	if cgroupPath != "" {
