@@ -355,6 +355,7 @@ func (s *Server) runPodSandbox(ctx context.Context, req *types.RunPodSandboxRequ
 	log.Infof(ctx, "s.ReserveSandboxContainerIDAndName: %s: %s", sbox.ID(), sbox.Name())
 	containerName, err := s.ReserveSandboxContainerIDAndName(sbox.Config())
 	if err != nil {
+		log.Errorf(ctx, "s.ReserveSandboxContainerIDAndName: %s: %s: %v", sbox.ID(), sbox.Name(), err)
 		return nil, err
 	}
 	description = fmt.Sprintf("runSandbox: releasing container name: %s", containerName)
@@ -372,6 +373,7 @@ func (s *Server) runPodSandbox(ctx context.Context, req *types.RunPodSandboxRequ
 
 	privileged := s.privilegedSandbox(req)
 
+	log.Infof(ctx, "s.StorageRuntimeServer().CreatePodSandbox: %s: %s", sbox.ID(), sbox.Name())
 	podContainer, err := s.StorageRuntimeServer().CreatePodSandbox(s.config.SystemContext,
 		sbox.Name(), sbox.ID(),
 		s.config.PauseImage,
@@ -386,6 +388,7 @@ func (s *Server) runPodSandbox(ctx context.Context, req *types.RunPodSandboxRequ
 		labelOptions,
 		privileged,
 	)
+	log.Infof(ctx, "s.StorageRuntimeServer().CreatePodSandbox: %s: %s: %v", sbox.ID(), sbox.Name(), err)
 
 	mountLabel := podContainer.MountLabel
 	processLabel := podContainer.ProcessLabel
