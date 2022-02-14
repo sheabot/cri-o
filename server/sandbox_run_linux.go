@@ -1,3 +1,4 @@
+//go:build linux
 // +build linux
 
 package server
@@ -301,17 +302,21 @@ func (s *Server) runPodSandbox(ctx context.Context, req *types.RunPodSandboxRequ
 		}
 	}()
 
+	log.Infof(ctx, "s.ReservePodName: %s: %s", sbox.ID(), sbox.Name())
 	if _, err := s.ReservePodName(sbox.ID(), sbox.Name()); err != nil {
+		log.Errorf(ctx, "s.ReservePodName: %v", err)
 		cachedID, resourceErr := s.getResourceOrWait(ctx, sbox.Name(), "sandbox")
 		if resourceErr == nil {
 			return &types.RunPodSandboxResponse{PodSandboxID: cachedID}, nil
 		}
+		log.Errorf(ctx, "s.ReservePodName: resourceErr: %v", resourceErr.Error())
 		return nil, errors.Wrapf(err, resourceErr.Error())
 	}
 
 	securityContext := sbox.Config().Linux.SecurityContext
 	hostNetwork := securityContext.NamespaceOptions.Network == types.NamespaceModeNODE
 
+	log.Infof(ctx, "hostNetwork: %v", hostNetwork)
 	if err := s.config.CNIPluginReadyOrError(); err != nil && !hostNetwork {
 		// if the cni plugin isn't ready yet, we should wait until it is
 		// before proceeding
@@ -347,6 +352,7 @@ func (s *Server) runPodSandbox(ctx context.Context, req *types.RunPodSandboxRequ
 		return nil, err
 	}
 
+	log.Infof(ctx, "s.ReserveSandboxContainerIDAndName: %s: %s", sbox.ID(), sbox.Name())
 	containerName, err := s.ReserveSandboxContainerIDAndName(sbox.Config())
 	if err != nil {
 		return nil, err
