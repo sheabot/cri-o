@@ -147,116 +147,144 @@ int main(int argc, char **argv) {
     /* Use pid=0 to indicate using the current process.  */
     pid = 0;
 
+    nwarnf("HERE %d", __LINE__);
     if (unshare(unshare_flags) < 0) {
       pexit("Failed to unshare namespaces");
     }
   } else {
     /* if we create a user namespace, we need a new process.  */
+    nwarnf("HERE %d", __LINE__);
     if (socketpair(AF_UNIX, SOCK_SEQPACKET | SOCK_CLOEXEC, 0, p))
       pexit("socketpair");
 
+    nwarnf("HERE %d", __LINE__);
     pid = fork();
     if (pid < 0)
       pexit("Failed to fork");
 
+    nwarnf("HERE %d", __LINE__);
     if (pid == 0) {
       close(p[0]);
 
+      nwarnf("HERE %d", __LINE__);
       if (prctl(PR_SET_PDEATHSIG, SIGKILL) < 0)
         pexit("Failed to prctl");
+      nwarnf("HERE %d", __LINE__);
       if (unshare(CLONE_NEWUSER) < 0)
         pexit("Failed to unshare namespaces");
 
       /* Notify that the user namespace is created.  */
+      nwarnf("HERE %d", __LINE__);
       if (TEMP_FAILURE_RETRY(write(p[1], "0", 1)) < 0)
         pexit("Failed to write on sync pipe");
 
       /* Wait for the mappings to be written.  */
+      nwarnf("HERE %d", __LINE__);
       res = '1';
       if (TEMP_FAILURE_RETRY(read(p[1], &res, 1)) < 0 || res != '0')
         pexit("Failed to read from the sync pipe");
 
+      nwarnf("HERE %d", __LINE__);
       if (TEMP_FAILURE_RETRY(setresuid(0, 0, 0)) < 0)
         pexit("Failed to setresuid");
+      nwarnf("HERE %d", __LINE__);
       if (TEMP_FAILURE_RETRY(setresgid(0, 0, 0)) < 0)
         pexit("Failed to setresgid");
 
       /* Now create all the other namespaces that are owned by the correct user.  */
+      nwarnf("HERE %d", __LINE__);
       if (unshare(unshare_flags & ~CLONE_NEWUSER) < 0)
         pexit("Failed to unshare namespaces");
 
       /* Notify that the namespaces are created.  */
+      nwarnf("HERE %d", __LINE__);
       if (TEMP_FAILURE_RETRY(write(p[1], "0", 1)) < 0)
         pexit("Failed to write on sync pipe");
 
+      nwarnf("HERE %d", __LINE__);
       if (TEMP_FAILURE_RETRY(close(p[1]) < 0))
         pexit("Failed to close pipe");
 
+      nwarnf("HERE %d", __LINE__);
       for (;;)
         pause();
       _exit (EXIT_SUCCESS);
     }
+    nwarnf("HERE %d", __LINE__);
     if (TEMP_FAILURE_RETRY(close(p[1])) < 0)
       pexit("Failed to close pipe");
 
     /* Wait for user namespace creation.  */
+    nwarnf("HERE %d", __LINE__);
     res = '1';
     if (TEMP_FAILURE_RETRY(read(p[0], &res, 1)) < 0 || res != '0')
       pexit("Failed to read from the sync pipe");
 
+    nwarnf("HERE %d", __LINE__);
     if (gid_mapping && write_mapping_file(pid, gid_mapping, true) < 0)
       pexit("Cannot write gid mappings");
 
+    nwarnf("HERE %d", __LINE__);
     if (uid_mapping && write_mapping_file(pid, uid_mapping, false) < 0)
       pexit("Cannot write gid mappings");
 
     /* Notify that the mappings were written.  */
+    nwarnf("HERE %d", __LINE__);
     if (TEMP_FAILURE_RETRY(write(p[0], "0", 1)) < 0)
       pexit("Failed to write on sync pipe");
 
     /* Wait for namespaces creation.  */
+    nwarnf("HERE %d", __LINE__);
     res = '1';
     if (TEMP_FAILURE_RETRY(read(p[0], &res, 1)) < 0 || res != '0')
       pexit("Failed to read from the sync pipe");
 
+    nwarnf("HERE %d", __LINE__);
     close(p[0]);
   }
 
+  nwarnf("HERE %d", __LINE__);
   if (sysctls && configure_sysctls(sysctls) < 0) {
     pexit("Failed to configure sysctls after unshare");
   }
 
   if (bind_user) {
+    nwarnf("HERE %d", __LINE__);
     if (bind_ns(pin_path, filename, "user", pid) < 0) {
       return EXIT_FAILURE;
     }
   }
 
   if (bind_uts) {
+    nwarnf("HERE %d", __LINE__);
     if (bind_ns(pin_path, filename, "uts", pid) < 0) {
       return EXIT_FAILURE;
     }
   }
 
   if (bind_ipc) {
+    nwarnf("HERE %d", __LINE__);
     if (bind_ns(pin_path, filename, "ipc", pid) < 0) {
       return EXIT_FAILURE;
     }
   }
 
   if (bind_net) {
+    nwarnf("HERE %d", __LINE__);
     if (bind_ns(pin_path, filename, "net", pid) < 0) {
       return EXIT_FAILURE;
     }
   }
 
   if (bind_cgroup) {
+    nwarnf("HERE %d", __LINE__);
     if (bind_ns(pin_path, filename, "cgroup", pid) < 0) {
       return EXIT_FAILURE;
     }
   }
 
   /* Avoid creating a zombie.  */
+  nwarnf("HERE %d", __LINE__);
   if (pid > 0 && kill(pid, SIGKILL) == 0)
     waitpid(pid, NULL, 0);
 
