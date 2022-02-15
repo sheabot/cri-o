@@ -118,7 +118,7 @@ func (mgr *NamespaceManager) NewPodNamespaces(cfg *PodNamespacesConfig) ([]Names
 			"--gid-mapping="+getMappingsForPinns(cfg.IDMappings.GIDs()))
 	}
 
-	logrus.Debugf("calling pinns with %v", pinnsArgs)
+	logrus.Infof("DEBUG: calling pinns with %v", pinnsArgs)
 	output, err := exec.Command(mgr.pinnsPath, pinnsArgs...).CombinedOutput()
 	if err != nil {
 		logrus.Warnf("pinns %v failed: %s (%v)", pinnsArgs, string(output), err)
@@ -131,6 +131,7 @@ func (mgr *NamespaceManager) NewPodNamespaces(cfg *PodNamespacesConfig) ([]Names
 
 		return nil, fmt.Errorf("failed to pin namespaces %v: %s %v", cfg.Namespaces, output, err)
 	}
+	logrus.Infof("DEBUG: pinns output: %s", string(output))
 
 	returnedNamespaces := make([]Namespace, 0, len(cfg.Namespaces))
 	for _, ns := range cfg.Namespaces {
